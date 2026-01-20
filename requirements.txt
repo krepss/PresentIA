@@ -3,6 +3,7 @@ groq
 langchain
 langchain-community
 langchain-groq
+langchain-huggingface
 faiss-cpu
 sentence-transformers
 pypdf
