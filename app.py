@@ -2,11 +2,12 @@ import streamlit as st
 import os
 import tempfile
 from langchain_groq import ChatGroq
-from langchain_community.document_loaders import PyPDFLoader
+# Mudança: Vamos usar o pypdf direto em vez do loader do langchain
+from pypdf import PdfReader
+from langchain.docstore.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-# Com as versões travadas no requirements.txt, essa linha vai funcionar:
 from langchain.chains import RetrievalQA
 
 # --- Configuração da Página ---
@@ -20,8 +21,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURAÇÃO DA CHAVE (EMBUTIDA) ---
-# AVISO: Se você deixar isso público no GitHub, a Groq pode bloquear sua chave por segurança.
+# --- CONFIGURAÇÃO DA CHAVE ---
+# A chave que você forneceu anteriormente
 api_key = "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"
 
 # --- Barra Lateral ---
@@ -43,15 +44,31 @@ def get_embeddings():
     return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 def process_pdf(uploaded_file):
-    # Cria arquivo temporário para leitura
+    # Cria arquivo temporário
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
         tmp_file.write(uploaded_file.getvalue())
         tmp_path = tmp_file.name
 
     try:
-        # 1. Carregar
-        loader = PyPDFLoader(tmp_path)
-        documents = loader.load()
+        # 1. Carregar (MÉTODO ROBUSTO - MANUAL)
+        # Substituímos o PyPDFLoader por uma leitura direta para evitar erro de 'bbox'
+        reader = PdfReader(tmp_path)
+        documents = []
+        
+        for i, page in enumerate(reader.pages):
+            try:
+                text = page.extract_text()
+                if text:
+                    # Criamos o objeto Document manualmente
+                    doc = Document(page_content=text, metadata={"page": i + 1})
+                    documents.append(doc)
+            except Exception as e:
+                # Se uma página der erro, pulamos ela e avisamos, mas não travamos o app
+                print(f"Erro ao ler página {i+1}: {e}")
+                continue
+
+        if not documents:
+            raise ValueError("Não foi possível extrair texto deste PDF. Ele pode ser uma imagem digitalizada.")
 
         # 2. Dividir (Chunking)
         text_splitter = RecursiveCharacterTextSplitter(
@@ -66,7 +83,6 @@ def process_pdf(uploaded_file):
         
         return db
     finally:
-        # Garante que o arquivo temporário seja deletado
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
@@ -92,6 +108,7 @@ if uploaded_file:
                 st.success("Documento pronto! Pergunte abaixo.")
             except Exception as e:
                 st.error(f"Erro ao processar: {e}")
+                st.warning("Dica: Se o PDF for uma imagem digitalizada (scanner), este método não funcionará. Use PDFs nativos.")
 
 # Área de Chat
 if st.session_state.vector_db:
@@ -102,12 +119,10 @@ if st.session_state.vector_db:
 
     # Input do usuário
     if prompt := st.chat_input("Pergunte sobre o arquivo..."):
-        # Adiciona pergunta ao histórico
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Gera resposta
         with st.chat_message("assistant"):
             with st.spinner("Pensando..."):
                 try:
@@ -125,7 +140,6 @@ if st.session_state.vector_db:
                     
                     st.markdown(answer)
                     
-                    # Fontes
                     with st.expander("📚 Fontes Consultadas"):
                         for doc in response['source_documents']:
                             st.caption(f"Conteúdo: {doc.page_content[:150]}...")
