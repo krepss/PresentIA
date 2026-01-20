@@ -1,8 +1,12 @@
 streamlit
 groq
-langchain
-langchain-community
-langchain-groq
-langchain-huggingface
-faiss-cpu
 pypdf
+faiss-cpu
+sentence-transformers
+# Versões fixas para garantir compatibilidade
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-core==0.2.38
+langchain-groq==0.1.9
+langchain-text-splitters==0.2.4
+langchain-huggingface==0.0.3
