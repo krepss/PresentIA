@@ -3,7 +3,7 @@ groq
 pypdf
 faiss-cpu
 sentence-transformers
-# Versões fixas para garantir compatibilidade
+# Versões travadas para evitar erro de importação
 langchain==0.2.16
 langchain-community==0.2.16
 langchain-core==0.2.38
