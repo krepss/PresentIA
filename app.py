@@ -6,8 +6,9 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-# Agora essa importação vai funcionar porque fixamos a versão 0.2.16
+# Com as versões travadas no requirements.txt, essa linha vai funcionar:
 from langchain.chains import RetrievalQA
+
 # --- Configuração da Página ---
 st.set_page_config(page_title="Chat com PDF (RAG)", page_icon="🧠", layout="wide")
 
@@ -19,19 +20,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- CONFIGURAÇÃO DA CHAVE (EMBUTIDA) ---
+# AVISO: Se você deixar isso público no GitHub, a Groq pode bloquear sua chave por segurança.
+api_key = "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"
+
 # --- Barra Lateral ---
 with st.sidebar:
     st.header("🧠 Configuração")
+    st.success("✅ Chave de API Embutida")
     
-    # Verifica se a chave está nos segredos ou pede ao usuário
-    if "GROQ_API_KEY" in st.secrets:
-        api_key = st.secrets["GROQ_API_KEY"]
-        st.success("✅ Chave de API detectada")
-    else:
-        api_key = st.text_input("Digite sua Groq API Key", type="password")
-        if not api_key:
-            st.warning("⚠️ Insira a chave para começar.")
-
     st.markdown("---")
     st.info("Este sistema lê seu PDF, cria um índice de busca e usa IA para responder perguntas baseadas no documento.")
     if st.button("Limpar Histórico"):
@@ -87,7 +84,7 @@ if "vector_db" not in st.session_state:
 uploaded_file = st.file_uploader("Carregar Documento", type="pdf")
 
 if uploaded_file:
-    # Processa o arquivo apenas se mudou ou se ainda não foi processado
+    # Processa o arquivo apenas se o botão for clicado
     if st.button("🚀 Processar Documento"):
         with st.spinner("Lendo e indexando..."):
             try:
@@ -97,7 +94,7 @@ if uploaded_file:
                 st.error(f"Erro ao processar: {e}")
 
 # Área de Chat
-if st.session_state.vector_db and api_key:
+if st.session_state.vector_db:
     # Exibe histórico
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
