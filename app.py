@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import tempfile
 from langchain_groq import ChatGroq
-# Mudança: Vamos usar o pypdf direto em vez do loader do langchain
 from pypdf import PdfReader
 from langchain.docstore.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
@@ -22,13 +21,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CONFIGURAÇÃO DA CHAVE ---
-# A chave que você forneceu anteriormente
+# Chave mantida conforme seu pedido
 api_key = "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"
 
 # --- Barra Lateral ---
 with st.sidebar:
     st.header("🧠 Configuração")
     st.success("✅ Chave de API Embutida")
+    st.caption("Modelo atual: Llama 3.3 Versatile")
     
     st.markdown("---")
     st.info("Este sistema lê seu PDF, cria um índice de busca e usa IA para responder perguntas baseadas no documento.")
@@ -51,7 +51,6 @@ def process_pdf(uploaded_file):
 
     try:
         # 1. Carregar (MÉTODO ROBUSTO - MANUAL)
-        # Substituímos o PyPDFLoader por uma leitura direta para evitar erro de 'bbox'
         reader = PdfReader(tmp_path)
         documents = []
         
@@ -59,11 +58,9 @@ def process_pdf(uploaded_file):
             try:
                 text = page.extract_text()
                 if text:
-                    # Criamos o objeto Document manualmente
                     doc = Document(page_content=text, metadata={"page": i + 1})
                     documents.append(doc)
             except Exception as e:
-                # Se uma página der erro, pulamos ela e avisamos, mas não travamos o app
                 print(f"Erro ao ler página {i+1}: {e}")
                 continue
 
@@ -126,7 +123,8 @@ if st.session_state.vector_db:
         with st.chat_message("assistant"):
             with st.spinner("Pensando..."):
                 try:
-                    llm = ChatGroq(groq_api_key=api_key, model_name="llama3-70b-8192")
+                    # CORREÇÃO AQUI: Atualizado para o modelo mais novo (3.3)
+                    llm = ChatGroq(groq_api_key=api_key, model_name="llama-3.3-70b-versatile")
                     
                     qa_chain = RetrievalQA.from_chain_type(
                         llm=llm,
