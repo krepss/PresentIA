@@ -1,9 +1,10 @@
 streamlit
 groq
 pypdf
+pdfplumber
 faiss-cpu
 sentence-transformers
-# Versões travadas para evitar erro de importação
+# Versões travadas
 langchain==0.2.16
 langchain-community==0.2.16
 langchain-core==0.2.38
