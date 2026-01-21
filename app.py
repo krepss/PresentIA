@@ -10,7 +10,7 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
 # --- Configuração da Página ---
-st.set_page_config(page_title="Chat com PDF (RAG)", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="Chat Multi-PDFs", page_icon="📚", layout="wide")
 
 # --- CSS Personalizado ---
 st.markdown("""
@@ -21,71 +21,80 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CONFIGURAÇÃO DA CHAVE ---
-# Chave mantida conforme seu pedido
 api_key = "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"
 
 # --- Barra Lateral ---
 with st.sidebar:
-    st.header("🧠 Configuração")
-    st.success("✅ Chave de API Embutida")
-    st.caption("Modelo atual: Llama 3.3 Versatile")
+    st.header("📚 Biblioteca")
+    st.success("✅ Modelo Llama 3.3 Ativo")
     
     st.markdown("---")
-    st.info("Este sistema lê seu PDF, cria um índice de busca e usa IA para responder perguntas baseadas no documento.")
-    if st.button("Limpar Histórico"):
+    st.info("Agora você pode enviar **vários arquivos** de uma vez! A IA lerá todos eles.")
+    if st.button("Limpar Memória"):
         st.session_state.messages = []
+        st.session_state.vector_db = None
         st.rerun()
 
 # --- Funções de RAG (Cérebro do App) ---
 
 @st.cache_resource
 def get_embeddings():
-    # Usa modelo gratuito e leve rodando na CPU
     return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-def process_pdf(uploaded_file):
-    # Cria arquivo temporário
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(uploaded_file.getvalue())
-        tmp_path = tmp_file.name
+def process_multiple_pdfs(uploaded_files):
+    # Lista para guardar todo o texto de todos os arquivos
+    all_documents = []
+    
+    status_text = st.empty()
+    progress_bar = st.progress(0)
+    
+    total_files = len(uploaded_files)
 
-    try:
-        # 1. Carregar (MÉTODO ROBUSTO - MANUAL)
-        reader = PdfReader(tmp_path)
-        documents = []
-        
-        for i, page in enumerate(reader.pages):
-            try:
+    for index, uploaded_file in enumerate(uploaded_files):
+        status_text.text(f"Lendo arquivo {index + 1}/{total_files}: {uploaded_file.name}")
+        progress_bar.progress((index + 1) / total_files)
+
+        # Cria arquivo temporário para cada PDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            tmp_path = tmp_file.name
+
+        try:
+            reader = PdfReader(tmp_path)
+            for i, page in enumerate(reader.pages):
                 text = page.extract_text()
                 if text:
-                    doc = Document(page_content=text, metadata={"page": i + 1})
-                    documents.append(doc)
-            except Exception as e:
-                print(f"Erro ao ler página {i+1}: {e}")
-                continue
+                    # AGORA ADICIONAMOS O NOME DO ARQUIVO (SOURCE) NOS DADOS
+                    doc = Document(
+                        page_content=text, 
+                        metadata={"source": uploaded_file.name, "page": i + 1}
+                    )
+                    all_documents.append(doc)
+        except Exception as e:
+            st.error(f"Erro ao ler {uploaded_file.name}: {e}")
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
-        if not documents:
-            raise ValueError("Não foi possível extrair texto deste PDF. Ele pode ser uma imagem digitalizada.")
+    status_text.text("Organizando conhecimento e criando índices...")
+    
+    if not all_documents:
+        raise ValueError("Nenhum texto foi extraído dos arquivos.")
 
-        # 2. Dividir (Chunking)
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200
-        )
-        texts = text_splitter.split_documents(documents)
-
-        # 3. Criar Banco Vetorial
-        embeddings = get_embeddings()
-        db = FAISS.from_documents(texts, embeddings)
-        
-        return db
-    finally:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
+    # Dividir e Vetorizar (Tudo junto)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    texts = text_splitter.split_documents(all_documents)
+    
+    embeddings = get_embeddings()
+    db = FAISS.from_documents(texts, embeddings)
+    
+    progress_bar.empty()
+    status_text.empty()
+    return db
 
 # --- Interface Principal ---
-st.title("🧠 Converse com seus Documentos")
-st.markdown("Faça upload de um **PDF** e tire dúvidas com a Inteligência Artificial.")
+st.title("📚 Chat com Múltiplos Arquivos")
+st.markdown("Envie contratos, manuais e relatórios. A IA cruza as informações de todos eles.")
 
 # Inicializa histórico
 if "messages" not in st.session_state:
@@ -93,43 +102,43 @@ if "messages" not in st.session_state:
 if "vector_db" not in st.session_state:
     st.session_state.vector_db = None
 
-# Área de Upload
-uploaded_file = st.file_uploader("Carregar Documento", type="pdf")
+# Área de Upload (MODIFICADA PARA MULTIPLOS ARQUIVOS)
+uploaded_files = st.file_uploader(
+    "Carregar Documentos (Segure Ctrl para selecionar vários)", 
+    type="pdf", 
+    accept_multiple_files=True # <--- A MÁGICA ACONTECE AQUI
+)
 
-if uploaded_file:
-    # Processa o arquivo apenas se o botão for clicado
-    if st.button("🚀 Processar Documento"):
-        with st.spinner("Lendo e indexando..."):
+if uploaded_files:
+    if st.button("🚀 Processar Todos os Arquivos"):
+        # Só processa se o banco de dados estiver vazio ou se o usuário pedir
+        with st.spinner("Processando biblioteca..."):
             try:
-                st.session_state.vector_db = process_pdf(uploaded_file)
-                st.success("Documento pronto! Pergunte abaixo.")
+                st.session_state.vector_db = process_multiple_pdfs(uploaded_files)
+                st.success(f"{len(uploaded_files)} documentos processados com sucesso!")
             except Exception as e:
-                st.error(f"Erro ao processar: {e}")
-                st.warning("Dica: Se o PDF for uma imagem digitalizada (scanner), este método não funcionará. Use PDFs nativos.")
+                st.error(f"Erro crítico: {e}")
 
 # Área de Chat
 if st.session_state.vector_db:
-    # Exibe histórico
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Input do usuário
-    if prompt := st.chat_input("Pergunte sobre o arquivo..."):
+    if prompt := st.chat_input("Pergunte sobre os documentos..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Pensando..."):
+            with st.spinner("Pesquisando nos arquivos..."):
                 try:
-                    # CORREÇÃO AQUI: Atualizado para o modelo mais novo (3.3)
                     llm = ChatGroq(groq_api_key=api_key, model_name="llama-3.3-70b-versatile")
                     
                     qa_chain = RetrievalQA.from_chain_type(
                         llm=llm,
                         chain_type="stuff",
-                        retriever=st.session_state.vector_db.as_retriever(search_kwargs={"k": 3}),
+                        retriever=st.session_state.vector_db.as_retriever(search_kwargs={"k": 4}), # Busca 4 trechos para ter mais contexto
                         return_source_documents=True
                     )
                     
@@ -138,15 +147,20 @@ if st.session_state.vector_db:
                     
                     st.markdown(answer)
                     
+                    # Fontes Melhoradas (Mostra qual arquivo)
                     with st.expander("📚 Fontes Consultadas"):
                         for doc in response['source_documents']:
-                            st.caption(f"Conteúdo: {doc.page_content[:150]}...")
-                            st.caption(f"Página: {doc.metadata.get('page', 'N/A')}")
+                            # Mostra o nome do arquivo original
+                            nome_arquivo = doc.metadata.get('source', 'Desconhecido')
+                            pagina = doc.metadata.get('page', 'N/A')
+                            
+                            st.markdown(f"**Arquivo:** `{nome_arquivo}` | **Pág:** {pagina}")
+                            st.caption(f"Trecho: {doc.page_content[:150]}...")
                             st.divider()
                             
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 except Exception as e:
-                    st.error(f"Erro ao gerar resposta: {e}")
+                    st.error(f"Erro: {e}")
 
-elif not uploaded_file:
-    st.info("👆 Comece enviando um arquivo PDF.")
+elif not uploaded_files:
+    st.info("👆 Selecione seus arquivos PDF acima para começar.")
