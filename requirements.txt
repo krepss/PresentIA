@@ -4,7 +4,7 @@ pypdf
 pdfplumber
 faiss-cpu
 sentence-transformers
-# Versões travadas
+# Versões fixas para evitar erros
 langchain==0.2.16
 langchain-community==0.2.16
 langchain-core==0.2.38
