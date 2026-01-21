@@ -30,7 +30,7 @@ api_key = "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"
 SENHAS_VALIDAS = ["ALUNO100", "ESTUDAR2024", "PASSARAGORA"] 
 
 # 3. Coloque aqui seu Link do Stripe
-LINK_PAGAMENTO = "https://buy.stripe.com/test_5kQ8wO0TA9JT5bQ5dC8so00" 
+LINK_PAGAMENTO = "https://buy.stripe.com/fZu7sK8nF93W1O2czp4c800" 
 
 # --- Barra Lateral (Login) ---
 with st.sidebar:
