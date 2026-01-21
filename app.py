@@ -175,7 +175,7 @@ if st.session_state.vector_db:
                 <p>Estude 10x mais rápido gerando provas infinitas das suas apostilas.</p>
                 <a href="{LINK_PAGAMENTO}" target="_blank">
                     <button style="background-color:#ef4444; color:white; padding:15px 32px; font-size:16px; border:none; border-radius:8px; cursor:pointer;">
-                        🔓 DESBLOQUEAR AGORA POR R$ 29,90
+                        🔓 DESBLOQUEAR AGORA POR R$ 19,90
                     </button>
                 </a>
                 <br><br>
