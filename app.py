@@ -31,7 +31,7 @@ st.markdown("""
 # --- CONFIGURAÇÃO ---
 api_key = "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"
 SENHAS_VALIDAS = ["ALUNO100", "ESTUDAR2024", "PASSARAGORA"] 
-LINK_PAGAMENTO = "https://buy.stripe.com/SEU_LINK_AQUI" 
+LINK_PAGAMENTO = "https://buy.stripe.com/fZu7sK8nF93W1O2czp4c800" 
 
 # --- Barra Lateral ---
 with st.sidebar:
