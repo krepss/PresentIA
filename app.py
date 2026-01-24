@@ -74,7 +74,7 @@ with st.sidebar:
         <a href="{LINK_PAGAMENTO}" target="_blank" class="sidebar-buy-btn">
             🔓 COMPRAR PREMIUM
         </a>
-        <p style="text-align:center; font-size:12px; color:gray; margin-top:5px;">Acesso imediato por R$ 29,90</p>
+        <p style="text-align:center; font-size:12px; color:gray; margin-top:5px;">Acesso imediato por R$ 19,90</p>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
