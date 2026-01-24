@@ -20,6 +20,24 @@ st.markdown("""
     .locked-box { background-color: #fef2f2; border: 2px solid #ef4444; padding: 20px; border-radius: 10px; text-align: center; }
     .instruction-card { background-color: #f3f4f6; padding: 15px; border-radius: 8px; border-left: 5px solid #4F46E5; }
     h1, h2, h3 { color: #1e1b4b; }
+    /* Estilo do Botão de Compra da Sidebar */
+    .sidebar-buy-btn {
+        display: block;
+        width: 100%;
+        background-color: #16a34a; /* Verde Venda */
+        color: white;
+        text-align: center;
+        padding: 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        margin-top: 10px;
+        border: 1px solid #15803d;
+    }
+    .sidebar-buy-btn:hover {
+        background-color: #15803d;
+        color: white;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -28,13 +46,15 @@ api_key = "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"
 SENHAS_VALIDAS = ["ALUNO100", "ESTUDAR2024", "PASSARAGORA"] 
 LINK_PAGAMENTO = "https://buy.stripe.com/fZu7sK8nF93W1O2czp4c800" 
 
-# --- Barra Lateral (Login e Menu) ---
+# --- Barra Lateral (Login e Venda) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712035.png", width=50) # Ícone Opcional
+    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712035.png", width=50)
     st.header("🔐 Área do Aluno")
     
+    # Input de Senha
     senha_user = st.text_input("Tenho uma Chave de Acesso", type="password", placeholder="Digite sua senha aqui...")
     
+    # Lógica de Validação
     if senha_user in SENHAS_VALIDAS:
         st.success("✅ Acesso Premium Ativo!")
         st.session_state.is_premium = True
@@ -44,6 +64,18 @@ with st.sidebar:
     else:
         st.caption("🔒 Funções avançadas bloqueadas.")
         st.session_state.is_premium = False
+
+    # --- BOTÃO DE VENDA LATERAL (A novidade) ---
+    # Só mostramos se o usuário NÃO for premium
+    if not st.session_state.get("is_premium", False):
+        st.markdown("---")
+        st.markdown("**Ainda não é aluno?**")
+        st.markdown(f"""
+        <a href="{LINK_PAGAMENTO}" target="_blank" class="sidebar-buy-btn">
+            🔓 COMPRAR PREMIUM
+        </a>
+        <p style="text-align:center; font-size:12px; color:gray; margin-top:5px;">Acesso imediato por R$ 29,90</p>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     if st.button("🗑️ Limpar Tudo / Reiniciar"):
@@ -110,13 +142,12 @@ if "quiz_history" not in st.session_state: st.session_state.quiz_history = []
 # Título Principal
 st.title("🎓 Tutor IA: Sua Máquina de Aprovação")
 
-# Se NÃO tiver arquivo carregado, mostra a Landing Page (Instruções)
+# Se NÃO tiver arquivo carregado, mostra a Landing Page
 if not st.session_state.vector_db:
     
     st.markdown("### Transforme PDFs chatos em Simulados em segundos.")
     st.markdown("---")
     
-    # 3 Colunas explicativas
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -145,7 +176,6 @@ if not st.session_state.vector_db:
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Área de Upload Centralizada e Grande
     uploaded_files = st.file_uploader(
         "👇 COMECE AGORA: Solte seus arquivos PDF aqui", 
         type="pdf", 
@@ -155,12 +185,12 @@ if not st.session_state.vector_db:
 
     if uploaded_files:
         if st.button("🚀 Processar e Começar a Estudar", use_container_width=True):
-            with st.spinner("O Professor IA está lendo seu material... (Isso leva poucos segundos)"):
+            with st.spinner("O Professor IA está lendo seu material..."):
                 st.session_state.vector_db = process_files(uploaded_files)
-                st.success("Tudo pronto! O material foi memorizado.")
-                st.rerun() # Recarrega para esconder as instruções e mostrar o chat
+                st.success("Tudo pronto!")
+                st.rerun()
 
-# Se JÁ tiver arquivo carregado, mostra a Área de Trabalho (Chat/Quiz)
+# Se JÁ tiver arquivo carregado
 else:
     st.info(f"✅ Modo de Estudo Ativo. A IA já leu seus documentos.")
     
