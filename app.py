@@ -154,7 +154,7 @@ with tab2:
             <br>
             <a href="{LINK_PAGAMENTO}" target="_blank">
                 <button style="background-color:#16a34a; color:white; padding:15px 40px; font-size:20px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">
-                    🔓 DESBLOQUEAR POR R$ 29,90
+                    🔓 DESBLOQUEAR POR R$ 19,90
                 </button>
             </a>
             <br><br><small>Pagamento Único. Acesso Imediato.</small>
