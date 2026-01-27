@@ -29,7 +29,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CONFIGURAÇÃO ---
-api_key = "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"
+try:
+    api_key = st.secrets["GROQ_API_KEY"]
+except FileNotFoundError:
+    st.error("A chave da API não foi encontrada nos Secrets!")
+    st.stop()
 SENHAS_VALIDAS = ["ALUNO100", "ESTUDAR2024", "PASSARAGORA"] 
 LINK_PAGAMENTO = "https://buy.stripe.com/fZu7sK8nF93W1O2czp4c800" 
 
